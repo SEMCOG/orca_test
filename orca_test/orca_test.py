@@ -87,13 +87,24 @@ def assert_orca_spec(o_spec):
     
     """
     # Assert the properties of each table and injectable
+    failed = None
     for t_spec in o_spec.tables:
-        assert_table_spec(t_spec)
+        try:
+            assert_table_spec(t_spec)
+        except OrcaAssertionError as e:
+            print "OrcaAssertionError: " + str(e)
+            failed = True
     
     for i_spec in o_spec.injectables:
-        assert_injectable_spec(i_spec)
-    
-    return
+        try:
+            assert_injectable_spec(i_spec)
+        except OrcaAssertionError as e:
+            print "OrcaAssertionError: " + str(e)
+            failed = True
+
+    if failed:
+        msg = "spec did not pass"
+        raise OrcaAssertionError(msg)
 
 
 def assert_table_spec(t_spec):
@@ -110,23 +121,39 @@ def assert_table_spec(t_spec):
     None
     
     """
+    failed = None
     # Translate the table's own properties into assertion statements
     for k, v in t_spec.properties.items():
-    
-        if (k, v) == ('registered', True):
-            assert_table_is_registered(t_spec.name)
-        
-        if (k, v) == ('registered', False):
-            assert_table_not_registered(t_spec.name)
-        
-        if (k, v) == ('can_be_generated', True):
-            assert_table_can_be_generated(t_spec.name)
+        try:
+            if (k, v) == ('registered', True):
+                assert_table_is_registered(t_spec.name)
+
+            if (k, v) == ('registered', False):
+                assert_table_not_registered(t_spec.name)
+
+            if (k, v) == ('can_be_generated', True):
+                assert_table_can_be_generated(t_spec.name)
+
+        except OrcaAssertionError as e:
+            print "OrcaAssertionError: " + str(e)
+            failed = True
+
+    if failed:
+        msg = "table spec did not pass"
+        raise OrcaAssertionError(msg)
     
     # Assert the properties of each column
     for c in t_spec.columns:
-        assert_column_spec(t_spec.name, c)
-        
-    return
+        try:
+            assert_column_spec(t_spec.name, c)
+
+        except OrcaAssertionError as e:
+            print "OrcaAssertionError: " + str(e)
+            failed = True
+
+    if failed:
+        msg = "table spec did not pass"
+        raise OrcaAssertionError(msg)
 
 
 def assert_column_spec(table_name, c_spec):
@@ -145,80 +172,103 @@ def assert_column_spec(table_name, c_spec):
     None
     
     """
+    failed = None
     # The missing-value coding affects other assertions, so check for this first
     missing_val_coding = np.nan
     for k, v in c_spec.properties.items():
-        
-        if k == 'missing_val_coding':
-            missing_val_coding = v
-            assert_column_missing_value_coding(table_name, c_spec.name, missing_val_coding)
+        try:
+            if k == 'missing_val_coding':
+                missing_val_coding = v
+                assert_column_missing_value_coding(table_name, c_spec.name, missing_val_coding)
+
+        except OrcaAssertionError as e:
+            print "OrcaAssertionError: " + str(e)
+            failed = True
+
+    if failed:
+        msg = "column spec did not pass"
+        raise OrcaAssertionError(msg)
 
     # Translate the column's properties into assertion statements
     for k, v in c_spec.properties.items():
-    
-        if (k, v) == ('registered', True):
-            assert_column_is_registered(table_name, c_spec.name)
+        try:
+            if (k, v) == ('registered', True):
+                assert_column_is_registered(table_name, c_spec.name)
 
-        if (k, v) == ('registered', False):
-            assert_column_not_registered(table_name, c_spec.name)
+            if (k, v) == ('registered', False):
+                assert_column_not_registered(table_name, c_spec.name)
 
-        if (k, v) == ('can_be_generated', True):
-            assert_column_can_be_generated(table_name, c_spec.name)
+            if (k, v) == ('can_be_generated', True):
+                assert_column_can_be_generated(table_name, c_spec.name)
 
-        if (k, v) == ('primary_key', True):
-            assert_column_is_primary_key(table_name, c_spec.name)
+            if (k, v) == ('primary_key', True):
+                assert_column_is_primary_key(table_name, c_spec.name)
 
-        if k == 'foreign_key':
-            # The value should be a str with format 'parent_table_name.parent_column_name'
-            tab, col = v.split('.')
-            assert_column_is_foreign_key(table_name, c_spec.name, tab, col, missing_val_coding)
-       
-        if (k, v) == ('numeric', True):
-            assert_column_is_numeric(table_name, c_spec.name)
-            
-        if (k, v) == ('missing', False):
-            assert_column_no_missing_values(table_name, c_spec.name, missing_val_coding)
+            if k == 'foreign_key':
+                # The value should be a str with format 'parent_table_name.parent_column_name'
+                tab, col = v.split('.')
+                assert_column_is_foreign_key(table_name, c_spec.name, tab, col, missing_val_coding)
 
-        if k == 'max':
-            assert_column_max(table_name, c_spec.name, v, missing_val_coding)
-       
-        if k == 'min':
-            assert_column_min(table_name, c_spec.name, v, missing_val_coding)
-       
-        if k == 'max_portion_missing':
-            assert_column_max_portion_missing(table_name, c_spec.name, v, missing_val_coding)
+            if (k, v) == ('numeric', True):
+                assert_column_is_numeric(table_name, c_spec.name)
 
-    return
+            if (k, v) == ('missing', False):
+                assert_column_no_missing_values(table_name, c_spec.name, missing_val_coding)
+
+            if k == 'max':
+                assert_column_max(table_name, c_spec.name, v, missing_val_coding)
+
+            if k == 'min':
+                assert_column_min(table_name, c_spec.name, v, missing_val_coding)
+
+            if k == 'max_portion_missing':
+                assert_column_max_portion_missing(table_name, c_spec.name, v, missing_val_coding)
+
+        except OrcaAssertionError as e:
+            print "OrcaAssertionError: " + str(e)
+            failed = True
+
+    if failed:
+        msg = "column spec did not pass"
+        raise OrcaAssertionError(msg)
 
 
 def assert_injectable_spec(i_spec):
     """
     """
+    failed = None
     # Translate the injectable's properties into assertion statements
     for k, v in i_spec.properties.items():
+        try:
     
-        if (k, v) == ('registered', True):
-            assert_injectable_is_registered(i_spec.name)
+            if (k, v) == ('registered', True):
+                assert_injectable_is_registered(i_spec.name)
 
-        if (k, v) == ('registered', False):
-            assert_injectable_not_registered(i_spec.name)
+            if (k, v) == ('registered', False):
+                assert_injectable_not_registered(i_spec.name)
 
-        if (k, v) == ('can_be_generated', True):
-            assert_injectable_can_be_generated(i_spec.name)
+            if (k, v) == ('can_be_generated', True):
+                assert_injectable_can_be_generated(i_spec.name)
 
-        if (k, v) == ('numeric', True):
-            assert_injectable_is_numeric(i_spec.name)
+            if (k, v) == ('numeric', True):
+                assert_injectable_is_numeric(i_spec.name)
 
-        if k == 'greater_than':
-            assert_injectable_greater_than(i_spec.name, v)
+            if k == 'greater_than':
+                assert_injectable_greater_than(i_spec.name, v)
 
-        if k == 'less_than':
-            assert_injectable_less_than(i_spec.name, v)
+            if k == 'less_than':
+                assert_injectable_less_than(i_spec.name, v)
 
-        if k == 'has_key':
-            assert_injectable_has_key(i_spec.name, v)
+            if k == 'has_key':
+                assert_injectable_has_key(i_spec.name, v)
 
-    return
+        except OrcaAssertionError as e:
+            print "OrcaAssertionError: " + str(e)
+            failed = True
+
+    if failed:
+        msg = "injectable spec did not pass"
+        raise OrcaAssertionError(msg)
 
 
 """

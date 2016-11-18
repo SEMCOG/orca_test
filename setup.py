@@ -29,6 +29,6 @@ setup(
     ],
     packages=find_packages(exclude=['*.tests']),
     install_requires=[
-        'orca >= 1.3.0',
+        'orca >= 1.3.0', 'pandas', 'numpy',
     ]
 )
